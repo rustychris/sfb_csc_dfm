@@ -1,0 +1,8 @@
+For runs before the restoration along Calhoun Cut, expects ccs_breach, ccs_west,
+and ccs_east.
+
+Monitoring cross sections are denoted as LineString features with monitor=1
+Monitoring points are all Point features.
+
+Expects {point,line,polygon}-features.geojson in the same directory as the
+original grid file.

@@ -1,0 +1,22 @@
+import os
+dfm_root="/opt/delft3dfm_2021.03/lnx64"
+os.environ['LD_LIBRARY_PATH']=dfm_root+"/lib"
+model_dir=os.path.dirname(__file__)
+
+data_dir=os.path.join(model_dir,"../../data")
+
+# Where to find DWR geotiff bathymetry
+common_data_dir=os.path.join(os.environ['HOME'],'data')
+csc_bathy_dir=os.path.join(os.environ['HOME'],'src','csc','bathy')
+
+class LocalConfig(object):
+    dfm_bin_dir=dfm_root+"/bin"
+    # not sure..
+    share_bin_dir="/usr/bin" 
+
+    mpi_bin_dir="/usr/bin"
+    mpi_bin_exe="mpiexec.mpich"
+
+    # other defaults for local machine
+    num_procs=4
+
