@@ -1,6 +1,8 @@
 """
 Create roughness input based on per-polygon values
 """
+import numpy as np
+
 def settings_to_roughness_xyz(model,settings,default_n=0.02):
     """
     (model, dict) => N x {x,y,n} array

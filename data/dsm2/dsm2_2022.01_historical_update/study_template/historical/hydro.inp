@@ -1,0 +1,81 @@
+# Description
+# Historical study
+# 202107
+CONFIGURATION
+config.inp
+END
+
+SCALAR
+NAME             VALUE
+title            "Hydro simulation: ${DSM2MODIFIER}"
+checkdata        false
+cont_bad         false
+cont_missing     true
+cont_question    true
+cont_unchecked   true
+deltax           5000
+display_intvl    1day
+gravity          32.2
+hydro_time_step  15min
+levee_slope      0.33
+maxiter          20
+printlevel       1
+theta            0.6
+toleranceq       0.001
+tolerancez       0.0008
+warn_missing     true
+warn_question    true
+warn_unchecked   false
+run_start_date   ${START_DATE}
+run_end_date     ${END_DATE}
+run_start_time   ${START_TIME}
+run_end_time     ${END_TIME}
+temp_dir         c:/temp
+binary_output    false
+dss_direct       true
+flush_output     20day
+END
+
+IO_FILE
+MODEL TYPE    IO  INTERVAL FILE
+hydro hdf5    out    30min ${HYDROTIDEFILE}               #Flow data to be passed to qual and ptm 
+hydro restart out     1mon ${HYDRORSTFILE}                #Initial condition a restart is required
+hydro output  out     none ${HYDROOUTFILE}                #Echoed run status                      
+hydro echo    out     none ${DSM2OUTPUTDIR}/hydro_echo_${DSM2MODIFIER}.inp #Echoed input                           
+END
+
+GRID
+${DSM2INPUTDIR}/channel_std_delta_grid.inp               #202008
+${DSM2INPUTDIR}/reservoir_std_delta_grid.inp             #20121214
+${DSM2INPUTDIR}/gate_std_delta_grid.inp                  #20200616 add 2015 drought barrier
+END
+
+INITIAL_CONDITION
+${DSM2INPUTDIR}/channel_ic_std_delta_grid.inp            #20121214
+${DSM2INPUTDIR}/reservoir_ic_std_delta_grid.inp          #20121214
+END
+
+HYDRO_TIME_SERIES
+${DSM2INPUTDIR}/boundary_flow_delta_historical.inp       #20090715
+${DSM2INPUTDIR}/source_flow_delta_historical.inp         #20121214 #CCWP intake starting from 08/01/2010 - Lan
+${DSM2INPUTDIR}/boundary_stage_delta_historical.inp      #20090715
+${DSM2INPUTDIR}/source_flow_dcd_historical_daily.inp     #20130111 replaced by DCD daily values 5/20/2014
+${DSM2INPUTDIR}/source_flow_jones_hydro.inp              #20090806
+${DSM2INPUTDIR}/source_flow_scd_historical_daily.inp     #20190717 suisun marsh CD daily
+END
+
+OPERATION
+${DSM2INPUTDIR}/oprule_historical_gate.inp               #20200118 SMBoatlock
+${DSM2INPUTDIR}/oprule_hist_temp_barriers.inp            #20200803 FALSERiver
+END
+
+OUTPUT_TIME_SERIES
+# ${DSM2INPUTDIR}/output_channel_std_hydro_rki.inp         #20180509
+# ${DSM2INPUTDIR}/output_reservoir_std_hydro_named.inp     #20090715
+${DSM2INPUTDIR}/output_channel_hydro.inp                    #202210
+${DSM2INPUTDIR}/output_flow_rki.inp                      #202102
+${DSM2INPUTDIR}/output_flow_csdp.inp                     #202102
+${DSM2INPUTDIR}/output_stage_rki.inp                     #202102
+${DSM2INPUTDIR}/output_stage_csdp.inp                    #202102
+END
+

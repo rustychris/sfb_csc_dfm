@@ -1,0 +1,12 @@
+Historical Update Release Notes
+
+The current release of the DSM2 historical update extends the previous lease to December 2021.
+
+Version Naming Change
+DSM2 is changing its versioning scheme to allow for the code to be versioned separately from the historical input setup. To this end this release follows the new versioning scheme. 
+Starting with this update, historical inputs will be released at a more frequent pace and will be versioned with the pattern of [year].[number]. E.g. This release is 2022.01 as it is the first release in 2022. 
+It will further reference the version of the DSM2 code [currently 8.2.2] that was used to run this simulation and validate the results.
+
+Source Code Used for the Update 
+DSM2 HYDRO, QUAL:   
+https://github.com/CADWRDeltaModeling/dsm2/releases/tag/v8.2.2 

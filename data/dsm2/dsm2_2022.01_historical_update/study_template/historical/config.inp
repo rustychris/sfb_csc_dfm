@@ -1,0 +1,65 @@
+# Description
+# Historical study
+# 202107
+ENVVAR
+NAME                     VALUE
+DSM2MODIFIER             hist_v2022_01                              #Study name used for DSM2 output
+DSM2INPUTDIR             ../../common_input
+VERSIONDATE              202112
+HISTFLOWVERSION          DWR-DMS-${VERSIONDATE}
+HISTSTAGEVERSION         ${HISTFLOWVERSION}
+HISTQUALVERSION          DWR-DMS-${VERSIONDATE}
+
+#runtime
+START_DATE               01Jan1990  #01Jan2010  #01Jan1990  #
+QUAL_START_DATE          02Jan1990  #02Jan2010  #02Jan1990  #
+PTM_START_DATE           ${QUAL_START_DATE}
+END_DATE                 31Dec2021
+START_TIME               0000
+END_TIME                 0000
+TEMPDIR                  z:/temp                                #Spacious directory for scratch files
+
+#Input envvars
+STUDYDIR                 .
+TSINPUTDIR               ../../timeseries
+BNDRYINPUT               ${TSINPUTDIR}/hist.dss
+GATEFILE                 ${TSINPUTDIR}/gates-v8.dss
+DICUFILE                 ${TSINPUTDIR}/DCD_hist_Lch5.dss #202209
+SSCDFILE                 ${TSINPUTDIR}/SMCD_hist.dss     #202309
+QUALBNDINP               ${BNDRYINPUT}
+DICUFILE_ECE             ${TSINPUTDIR}/dicuwq_3vals_extended.dss
+SMCDFILEEC               ${TSINPUTDIR}/SMCD_hist_wq_ec.dss
+STOCKTON_FLOW_FILE       constant
+STOCKTON_EFF_FLOW        0.0                                    #needed for DO runs, if not available use 0.0
+
+#Output
+DSM2OUTPUTDIR            ${STUDYDIR}/output
+OUTPUTFILE               ${DSM2MODIFIER}.dss
+#Hydro
+FLOWPATTERN              ./output/FLOWPATTERN.dss
+HYDROOUTDSSFILE          ${DSM2OUTPUTDIR}/${OUTPUTFILE}
+HYDROOUTFILE             ${DSM2OUTPUTDIR}/${DSM2MODIFIER}.hof
+HYDRORSTFILE             ${DSM2OUTPUTDIR}/${DSM2MODIFIER}.hrf
+HYDROTIDEFILE            ${DSM2OUTPUTDIR}/${DSM2MODIFIER}.h5
+GATEOUTPUTFILE           ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_GATE.dss
+HYDROOUTDSSFILE_FLOW     ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_FLOW.dss
+HYDROOUTDSSFILE_STAGE    ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_STAGE.dss
+HYDROOUTDSSFILE_VEL      ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_VEL.dss
+#Qual EC
+QUALOUTDSSFILE           ${DSM2OUTPUTDIR}/${DSM2MODIFIER}.dss
+QUALOUTDSSFILE_EC        ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_EC.dss
+QUALOUTDSSFILE_ECX2      ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_EC_X2.dss
+QUAL_OUTDSS_EC_FP        ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_EC_FP.dss
+QUALOUTFILE_EC           ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_EC.qof
+QUALRSTFILE_EC           ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_EC.qrf
+QUALTIDEFILE_EC          ${DSM2OUTPUTDIR}/${DSM2MODIFIER}_EC.h5
+FINE_OUT                 15MIN
+FINE_OUT_DAY             1DAY
+#Jones Tract Levee Break
+EVENTSINPUT              ${TSINPUTDIR}/events.dss
+#PTM
+PTMOUTFILE               ${DSM2OUTPUTDIR}/${DSM2MODIFIER}.pof
+PTMOUTPUTFILE            ${DSM2OUTPUTDIR}/ptmout.dss
+END
+
+
