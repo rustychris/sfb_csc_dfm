@@ -9,6 +9,9 @@ data_dir=os.path.join(model_dir,"../../data")
 common_data_dir=os.path.join(os.environ['HOME'],'data')
 csc_bathy_dir=os.path.join(os.environ['HOME'],'src','csc','bathy')
 
+hec_dssvue=os.path.join(os.environ['HOME'],"software/HEC-DSSVue-323-Beta-Linux/hec-dssvue.sh")
+os.environ['DSSVUE']=hec_dssvue
+
 class LocalConfig(object):
     dfm_bin_dir=dfm_root+"/bin"
     # not sure..
@@ -16,6 +19,11 @@ class LocalConfig(object):
 
     mpi_bin_dir="/usr/bin"
     mpi_bin_exe="mpiexec.mpich"
+
+    # Farm settings:
+    # mpi_flavor='slurm'
+    # slurm_srun='srun'
+    # srun_args=["--mpi=pmi2","-o","job%j-%2t.out"]
 
     # other defaults for local machine
     num_procs=4
