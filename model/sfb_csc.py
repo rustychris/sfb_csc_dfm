@@ -326,9 +326,10 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         # /FILL+CHAN/CHSWP003/FLOW-EXPORT//1DAY/${HISTFLOWVERSION}/
         self.log.warning("SWP not plumbed")
 
+        # cache_by_full_path=False to make it easier to share cached data across machines.
         SWP_data=dss.read_records(self.hist_dss,
                                   "/FILL+CHAN/CHSWP003/FLOW-EXPORT//1DAY/DWR-DMS-202112/",
-                                  cache_dir=self.dss_cache_dir)
+                                  cache_dir=self.dss_cache_dir,cache_by_full_path=False)
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.
         # values (according to DSS-vue) are cfs, all positive.
@@ -348,7 +349,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         # CHDMC004 from hist.dss (Delta-Mendota Canal, via Bill Jones Pumping Plant)
         CVP_data=dss.read_records(self.hist_dss,
                                   "/FILL+CHAN/CHDMC004/FLOW-EXPORT//1DAY/DWR-DMS-202112/",
-                                  cache_dir=self.dss_cache_dir)
+                                  cache_dir=self.dss_cache_dir,cache_by_full_path=False)
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.
         # values (according to DSS-vue) are cfs, all positive.
@@ -576,7 +577,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     def add_dcc(self):
         DCC_data=dss.read_records(self.gates_dss,
                                   "/HIST+GATE/RSAC128/POS//IR-YEAR/DWR-DMS-DSM2/",
-                                  cache_dir=self.dss_cache_dir)
+                                  cache_dir=self.dss_cache_dir,cache_by_full_path=False)
 
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.
