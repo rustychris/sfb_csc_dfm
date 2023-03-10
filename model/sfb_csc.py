@@ -347,7 +347,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     def set_cvp_bc(self):
         # CHDMC004 from hist.dss (Delta-Mendota Canal, via Bill Jones Pumping Plant)
         CVP_data=dss.read_records(self.hist_dss,
-                                  "/FILL+CHAN/CHDMC004/FLOW-EXPORT//1DAY//DWR-DMS-202112/",
+                                  "/FILL+CHAN/CHDMC004/FLOW-EXPORT//1DAY/DWR-DMS-202112/",
                                   cache_dir=self.dss_cache_dir)
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.

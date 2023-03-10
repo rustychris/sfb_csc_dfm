@@ -14,5 +14,5 @@ model=sfb_csc.SfbCsc(run_start=np.datetime64("2019-04-01"),
                      extra_scripts=[__file__])
 
 model.write()
-model.copy_scripts([__file__,"local_config.py","sfb_csc.py"])
+
 
