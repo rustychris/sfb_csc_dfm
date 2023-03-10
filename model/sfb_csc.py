@@ -150,7 +150,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         # self.add_gazetteer(os.path.join(grid_dir,"point_features.shp"))
         # self.add_gazetteer(os.path.join(grid_dir,"polygon_features.shp"))
         
-        bathy_grid_fn=self.src_grid_fn.replace(".nc","-bathy-{self.bathy_version}.nc")
+        bathy_grid_fn=self.src_grid_fn.replace(".nc",f"-bathy-{self.bathy_version}.nc")
         assert bathy_grid_fn!=self.src_grid_fn
 
         if utils.is_stale(bathy_grid_fn,[self.src_grid_fn]+self.bathy_sources(self.bathy_version)):
