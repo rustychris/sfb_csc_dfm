@@ -46,6 +46,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     
     projection='EPSG:26910'
 
+    # DSS cache is particularly important because dssvue doesn't run in all places, so we probably want to
+    # share the cached data across machines
+    dss_cache_dir=os.path.join(os.path.dirname(__file__),"../data/dss_cache")
     gates_dss=os.path.join(os.path.dirname(__file__),"../data/dsm2/dsm2_2022.01_historical_update/timeseries/gates-v8.dss")
     hist_dss =os.path.join(os.path.dirname(__file__),"../data/dsm2/dsm2_2022.01_historical_update/timeseries/hist.dss")
 
@@ -324,7 +327,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         self.log.warning("SWP not plumbed")
 
         SWP_data=dss.read_records(self.hist_dss,
-                                  "/FILL+CHAN/CHSWP003/FLOW-EXPORT//1DAY/DWR-DMS-202112/")
+                                  "/FILL+CHAN/CHSWP003/FLOW-EXPORT//1DAY/DWR-DMS-202112/",
+                                  cache_dir=self.dss_cache_dir)
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.
         # values (according to DSS-vue) are cfs, all positive.
@@ -343,7 +347,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     def set_cvp_bc(self):
         # CHDMC004 from hist.dss (Delta-Mendota Canal, via Bill Jones Pumping Plant)
         CVP_data=dss.read_records(self.hist_dss,
-                                  "/FILL+CHAN/CHDMC004/FLOW-EXPORT//1DAY//DWR-DMS-202112/")
+                                  "/FILL+CHAN/CHDMC004/FLOW-EXPORT//1DAY//DWR-DMS-202112/",
+                                  cache_dir=self.dss_cache_dir)
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.
         # values (according to DSS-vue) are cfs, all positive.
@@ -570,7 +575,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
 
     def add_dcc(self):
         DCC_data=dss.read_records(self.gates_dss,
-                                  "/HIST+GATE/RSAC128/POS//IR-YEAR/DWR-DMS-DSM2/")
+                                  "/HIST+GATE/RSAC128/POS//IR-YEAR/DWR-DMS-DSM2/",
+                                  cache_dir=self.dss_cache_dir)
+
         # => DataFrame with time (dt64) and value (float) columns, no index.
         # times appear to be PST.
         # Value is 0,1,2, corresponding to how many gates are open.
