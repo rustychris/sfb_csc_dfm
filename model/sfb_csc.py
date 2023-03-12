@@ -8,6 +8,7 @@ import shutil
 
 import stompy.model.delft.dflow_model as dfm
 import stompy.model.hydro_model as hm
+import subprocess
 from stompy import utils
 from stompy.grid import unstructured_grid
 from stompy.spatial import field
@@ -236,11 +237,6 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
 
         self.set_roughness()
 
-        if self.salinity:
-            for tbc in tidal_bcs:
-                # May not work with Threemile, originally just used Decker.
-                self.add_bcs(hm.NwisScalarBC(station=tbc.station, parent=tbc, scalar='salinity'))
-
         if self.dwaq:
             self.setup_delwaq()
             # advect zero-order nitrate production coefficient from Sac River
@@ -320,6 +316,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
                                   filters=[hm.FillTidal(),
                                            hm.Lowpass(cutoff_hours=1.0)])
         self.add_bcs(tidal_bc)
+
+        if self.salinity:
+            self.add_bcs(hm.ScalarBC(name='ocean', parent=tidal_bc, scalar='salinity', value=33.5))
             
     def set_swp_bc(self):
         # CHSWP003 from hist.dss

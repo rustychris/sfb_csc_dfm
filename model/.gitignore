@@ -5,3 +5,4 @@ data_*
 hec_script.py
 output.csv
 dsm2_gates.py
+slurm_out*
