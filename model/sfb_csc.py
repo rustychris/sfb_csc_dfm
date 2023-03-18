@@ -89,7 +89,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         global, DFM-specific settings
         """
         # 6 is maybe better for getting good edges
-        self.mdu['geometry','BedlevType']=6
+        # but from the Pescadero work 5 was more stable
+        self.mdu['geometry','BedlevType']=5
 
         # fail out when it goes unstable.
         self.mdu['numerics','MinTimestepBreak']=0.01
@@ -203,8 +204,35 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         
         g=unstructured_grid.UnstructuredGrid.from_ugrid(src_grid_fn)
         dem=field.MultiRasterField(bathy_sources)
-        node_depths=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
-        g.add_node_field('depth',node_depths,on_exists='overwrite')
+
+        if 0:
+            node_depths=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
+        if 1:
+            # from pescadero model
+            # Bias deep
+            # Maybe a good match with bedlevtype=5.
+            # BLT=5: edges get shallower node, cells get deepest edge.
+            # So extract edge depths (min,max,mean), and nodes get deepest
+            # edge.
+            alpha=np.linspace(0,1,8)
+            edge_data=np.zeros( (g.Nedges(),3), np.float64)
+
+            # Find min/max/mean depth of each edge:
+            for j in utils.progress(range(g.Nedges())):
+                pnts=(alpha[:,None] * g.nodes['x'][g.edges['nodes'][j,0]] +
+                      (1-alpha[:,None]) * g.nodes['x'][g.edges['nodes'][j,1]])
+                z=dem(pnts)
+                edge_data[j,0]=z.min()
+                edge_data[j,1]=z.max()
+                edge_data[j,2]=z.mean()
+
+            z_node=np.zeros(g.Nnodes())
+            for n in utils.progress(range(g.Nnodes())):
+                # This is the most extreme bias: nodes get the deepest
+                # of the deepest points along adjacent edgse
+                z_node[n]=edge_data[g.node_to_edges(n),0].min()
+        
+        g.add_node_field('node_z_bed',node_depths,on_exists='overwrite')
         g.write_ugrid(dst_grid_fn,overwrite=True)
             
         return g
@@ -488,6 +516,13 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         self.setup_dcd_common(ds)
 
     def setup_dcd_common(self,ds):
+        """
+        Expects xr.Dataset() with
+        ds.seep_flow, ds.drain_flow, ds.div_flow.
+        Those are assumed to have a shared node dimension, matching
+        ds.node_x, ds.node_y coordinates in UTM 10 meter (eg EPSG:26910)
+        All flows expected in CFS.
+        """
         valid_dcd_nodes=( (np.isfinite(ds.seep_flow).any(dim='time')).values |
                           (np.isfinite(ds.drain_flow).any(dim='time')).values |
                           (np.isfinite(ds.div_flow).any(dim='time')).values )
@@ -520,8 +555,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
                 
         # For each good matchup, add a source/sink.
         for n,dsm_x,dfm_x in pairs:
-            # positive into the domain
-            Q=(   ds['drain_flow'].isel(node=n)
+            # positive into the domain, and convert to SI
+
+            Q=ft_to_m**3 * (   ds['drain_flow'].isel(node=n)
                 - ds['seep_flow'].isel(node=n)
                 - ds['div_flow'].isel(node=n)
             )

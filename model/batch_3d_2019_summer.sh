@@ -15,4 +15,4 @@ export DFM_ROOT=$PREFIX/build/dfm/src/build_dflowfm-old/install
 export PATH=$PREFIX/bin:$PATH
 export LD_LIBRARY_PATH=$DFM_ROOT/lib:$PREFIX/lib:$LD_LIBRARY_PATH
 
-python sfb_csc.py --run-dir data_2d_2019_summer -n 16 -l 0 -p 2019-04-01:2019-06-01 --salinity
+python sfb_csc.py --run-dir data_3d_2019_summer -n 16 -l 10 -p 2019-04-01:2019-06-01 --salinity
