@@ -1,8 +1,7 @@
 [model]
 Program           = D-Flow FM
-Version           = 1.1.192.51419
-MDUFormatVersion  = 1.02
-GuiVersion        = 1.3.2.37884
+Version                           = 1.1.191.47635
+MDUFormatVersion                  = 1.05                # File format version (do not edit this)
 AutoStart         = 0
 
 [geometry]
@@ -34,7 +33,7 @@ Nonlin2D          = 0
 Sillheightmin     = 0.5
 Makeorthocenters  = 0
 Dcenterinside     = 1
-Bamin             = 1E-06
+Bamin             = 1.d-6
 OpenBoundaryTolerance= 3
 RenumberFlowNodes = 1
 Kmx               = 0

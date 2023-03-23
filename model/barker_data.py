@@ -3,6 +3,7 @@ import xarray as xr
 import pandas as pd
 from stompy.io.local import cdec
 import stompy.model.hydro_model as hm
+import local_config
 
 # original csv has 2007-09-29 to 2017-04-30, and is identical
 # to the data from CDEC after unit and sign conversion
@@ -24,7 +25,7 @@ class BarkerPumpsBC(hm.FlowBC):
         Returns a dataset with a 'Q' variable, and with time as UTC
         """
         ds=cdec.cdec_dataset("BKS",period_start,period_stop,70,
-                             cache_dir='cache',duration='D')
+                             cache_dir=local_config.cache_dir,duration='D')
         # cfs=>m3s, and 'pumping' sign to inflow sign
         ds['Q']=-0.028316847 * ds.sensor0070
         ds['Q'].attrs['units']='m3 s-1'

@@ -20,9 +20,8 @@ import barker_data
 
 import rough_regions as rr
 
-cache_dir=os.path.join(local_config.model_dir,'cache')
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
+if not os.path.exists(local_config.LocalConfig.cache_dir):
+    os.makedirs(local_config.LocalConfig.cache_dir)
 
 ft_to_m=0.3048
 
@@ -206,7 +205,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         dem=field.MultiRasterField(bathy_sources)
 
         if 0:
-            node_depths=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
+            node_z=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
         if 1:
             # from pescadero model
             # Bias deep
@@ -226,13 +225,13 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
                 edge_data[j,1]=z.max()
                 edge_data[j,2]=z.mean()
 
-            z_node=np.zeros(g.Nnodes())
+            node_z=np.zeros(g.Nnodes())
             for n in utils.progress(range(g.Nnodes())):
                 # This is the most extreme bias: nodes get the deepest
                 # of the deepest points along adjacent edgse
-                z_node[n]=edge_data[g.node_to_edges(n),0].min()
+                node_z[n]=edge_data[g.node_to_edges(n),0].min()
         
-        g.add_node_field('node_z_bed',node_depths,on_exists='overwrite')
+        g.add_node_field('node_z_bed',node_z,on_exists='overwrite')
         g.write_ugrid(dst_grid_fn,overwrite=True)
             
         return g
@@ -340,7 +339,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         
         
     def set_ocean_bc(self):
-        tidal_bc = hm.NOAAStageBC(name='ocean',station=9414290,cache_dir=cache_dir,
+        tidal_bc = hm.NOAAStageBC(name='ocean',station=9414290,cache_dir=self.cache_dir,
                                   filters=[hm.FillTidal(),
                                            hm.Lowpass(cutoff_hours=1.0)])
         self.add_bcs(tidal_bc)
