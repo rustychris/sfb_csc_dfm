@@ -42,7 +42,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     nlayers=0 # 0 is 2D, 1 is 3D with a single layer
     scenario='base' # no scenarios at this point.
     
-    dredge_depth=-1.0 
+    dredge_depth=-1.0
+    nodata_elevation=3.0 # a handful of nodes/edges fall in holes of the DEM. they'll get this elevation.
     
     projection='EPSG:26910'
 
@@ -79,6 +80,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         self.configure_global() # DFM-specific things
 
         self.set_grid_and_features()
+        self.config_layers() # needs the grid
         self.set_bcs()
         self.setup_structures() # 1 call
         self.setup_monitoring()
@@ -122,18 +124,86 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         else:
             self.mdu['physics','Idensform']=0 # no density effects
 
-        self.config_layers()
-
-        
+    layer_type='z'
+    z_min=-20
+    z_max=2
+    deep_bed_layer=True # make the deepest interface at least as deep as the deepest node
     def config_layers(self):
         """
         Handle layer-related config, separated into its own method to
         make it easier to specialize in subclasses.
         Now called for 2D and 3D alike
         """
+        if self.layer_type=='sigma':
+            self.config_layers_sigma()
+        elif self.layer_type=='z':
+            self.config_layers_z()
+        else:
+            raise Exception("layer type is forked")
+
+    def config_layers_sigma(self):
         self.mdu['geometry','Kmx']=self.nlayers # number of layers
         self.mdu['geometry','LayerType']=1 # sigma
 
+    def config_layers_z(self):
+        """
+        Handle layer-related config, separated into its own method to
+        make it easier to specialize in subclasses.
+        Now called for 2D and 3D alike
+        """
+        # 10 sigma layers yielded nan at wetting front, and no tidal variability.
+        # 2D works fine -- seems to bring in the mouth geometry okay.
+        # Must be called after grid is set
+                
+        self.mdu['geometry','Kmx']=self.nlayers # number of layers
+        if self.nlayers>1:
+            self.mdu['geometry','LayerType']=2 # all z layers
+            self.mdu['geometry','ZlayBot']=self.z_min
+            self.mdu['geometry','ZlayTop']=self.z_max
+            
+            # Adjust node elevations to avoid being just below interfaces
+            # This may not be necessary.
+            z_node=self.grid.nodes['node_z_bed'] # positive up
+            kmx=self.nlayers
+            z_interfaces=np.linspace(self.z_min,self.z_max,kmx+1)
+
+            write_stretch=False 
+            if self.deep_bed_layer:
+                grid_z_min=self.grid.nodes['node_z_bed'].min()
+                if z_interfaces[0]>grid_z_min:
+                    self.log.info("Bottom interface moved from %.3f to %.3f to match deepest node of grid"%
+                                  (z_interfaces[0], grid_z_min))
+                    z_interfaces[0]=grid_z_min
+                    self.mdu['geometry','ZlayBot']=grid_z_min
+                    write_stretch=True
+
+            dz_bed=z_interfaces[ np.searchsorted(z_interfaces,z_node).clip(0,kmx)] - z_node
+            thresh=min(0.05,0.2*np.median(np.diff(z_interfaces)))
+            # will deepen these nodes.  Could push them up or down depending
+            # on which is closer, but generally we end up lacking conveyance to
+            # err on the side of deepening
+            adjust=np.where((dz_bed>0)&(dz_bed<thresh),
+                            thresh-dz_bed, 0)
+            self.grid.nodes['node_z_bed']-=adjust
+
+            if write_stretch:
+                # Based on this post:
+                # https://oss.deltares.nl/web/delft3dfm/general1/-/message_boards/message/1865851
+                self.mdu['geometry','StretchType']=1
+                cumul=100*(z_interfaces-z_interfaces[0])/(z_interfaces[-1] - z_interfaces[0])
+                # round to 0 decimals to be completely sure the sum is exact.
+                # hopefully 1 decimal is okay. gives more even layers when getting up to 25+ layers.
+                cumul=np.round(cumul,1)
+                fracs=np.diff(cumul)
+                # something like 10 10 10 10 10 10 10 10 10 10
+                # Best not to make this too long.  100 layers with %.4f is too long for the
+                # default partitioning script to handle, and this gets truncated.
+                self.mdu['geometry','stretchCoef']=" ".join(["%.1f"%frac for frac in fracs])
+
+        if self.nlayers>1:
+            # These *might* help in 3D...
+            self.mdu['time','AutoTimestep']=3 # 5=bad. 4 okay but slower, seems no better than 3.
+            self.mdu['time','AutoTimestepNoStruct']=1 # had been 0
             
     def set_grid_and_features(self):
         grid_dir=os.path.dirname(self.src_grid_fn)
@@ -214,22 +284,23 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             # So extract edge depths (min,max,mean), and nodes get deepest
             # edge.
             alpha=np.linspace(0,1,8)
-            edge_data=np.zeros( (g.Nedges(),3), np.float64)
+            edge_min=np.zeros(g.Nedges(), np.float64)
 
-            # Find min/max/mean depth of each edge:
+            # Find min depth of each edge:
             for j in utils.progress(range(g.Nedges())):
                 pnts=(alpha[:,None] * g.nodes['x'][g.edges['nodes'][j,0]] +
                       (1-alpha[:,None]) * g.nodes['x'][g.edges['nodes'][j,1]])
+                # There are some holes in the DEM and this is coming back with some nans.
                 z=dem(pnts)
-                edge_data[j,0]=z.min()
-                edge_data[j,1]=z.max()
-                edge_data[j,2]=z.mean()
+                edge_min[j]=np.nanmin(z)
+                if np.isnan(edge_min[j]):
+                    edge_min[j]=self.nodata_elevation
 
             node_z=np.zeros(g.Nnodes())
             for n in utils.progress(range(g.Nnodes())):
                 # This is the most extreme bias: nodes get the deepest
                 # of the deepest points along adjacent edgse
-                node_z[n]=edge_data[g.node_to_edges(n),0].min()
+                node_z[n]=edge_min[g.node_to_edges(n)].min()
         
         g.add_node_field('node_z_bed',node_z,on_exists='overwrite')
         g.write_ugrid(dst_grid_fn,overwrite=True)

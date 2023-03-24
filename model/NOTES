@@ -7,3 +7,13 @@ data_3d_2019_summer-v002
 Given that in one case it didn't even get through booting the script, seems
 likely that it's a farm issue.
 
+Running on c6-77 seems to never get off the ground.
+Running on c4-86 seems to get stuck after doing some grid stuff, running dflowfm
+
+Tried switching to z-layers. Seems to still be broken.
+WTF.
+
+4 domains (11,12,13,15) report ** INFO   : update_vertadmin: bl error, k=   4074
+when run with z layers.
+
+Maybe there are some nan bed elevations?
