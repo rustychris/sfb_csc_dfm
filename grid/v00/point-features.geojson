@@ -262,8 +262,9 @@
 { "type": "Feature", "properties": { "name": "DFW_AntiochDunes", "type": "obs_disabled" }, "geometry": { "type": "Point", "coordinates": [ 608305.690640927641653, 4208684.884369746781886 ] } },
 { "type": "Feature", "properties": { "name": "IEP_D12", "type": "obs_disabled" }, "geometry": { "type": "Point", "coordinates": [ 604777.823085007723421, 4208879.725741517730057 ] } },
 { "type": "Feature", "properties": { "name": "NOAA_PointReyes", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 503459.158493746654131, 4203729.306871994398534 ] } },
-{ "type": "Feature", "properties": { "name": "NOAA_Redwood", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 569943.746119454270229, 4152396.006677071098238 ] } },
+{ "type": "Feature", "properties": { "name": "NOAA_Redwood", "type": "obs_disabled" }, "geometry": { "type": "Point", "coordinates": [ 569943.746119454270229, 4152396.006677071098238 ] } },
 { "type": "Feature", "properties": { "name": "NOAA_Richmond", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 552647.925548263825476, 4197938.638643557205796 ] } },
-{ "type": "Feature", "properties": { "name": "NOAA_MareIslan", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 565786.937254911987111, 4213842.847350270487368 ] } }
+{ "type": "Feature", "properties": { "name": "NOAA_MareIslan", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 565786.937254911987111, 4213842.847350270487368 ] } },
+{ "type": "Feature", "properties": { "name": "Redwood", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 571096.634659608243965, 4153824.754702957812697 ] } }
 ]
 }
