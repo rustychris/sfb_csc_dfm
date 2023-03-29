@@ -124,10 +124,11 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         else:
             self.mdu['physics','Idensform']=0 # no density effects
 
-    layer_type='z'
-    z_min=-20
+    layer_type='sigma' # 'sigma' or 'z'
+    z_min=-20 # only relevant for layer_type='z'
     z_max=2
     deep_bed_layer=True # make the deepest interface at least as deep as the deepest node
+    
     def config_layers(self):
         """
         Handle layer-related config, separated into its own method to
