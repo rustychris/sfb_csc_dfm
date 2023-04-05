@@ -5,7 +5,7 @@
 #SBATCH --partition high2
 #SBATCH -n 32
 #SBATCH -N 1
-#SBATCH --time 10-00:00:00
+#SBATCH --time 8-00:00:00
 
 conda activate general
 

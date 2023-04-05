@@ -731,8 +731,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
 
     def setup_monitoring(self):
         # -- Extract locations for sections and monitor points
-        mon_sections=self.match_gazetteer(monitor=1,geom_type='LineString')
-        mon_points  =self.match_gazetteer(geom_type='Point')
+        mon_sections=self.match_gazetteer(monitor=1,geom_type='LineString',category='section')
+        mon_points  =self.match_gazetteer(geom_type='Point',type='obs')
         self.add_monitor_sections(mon_sections)
         self.add_monitor_points(mon_points)
 
