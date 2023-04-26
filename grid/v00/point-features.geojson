@@ -91,7 +91,7 @@
 { "type": "Feature", "properties": { "name": "P35", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 581338.158548683393747, 4148520.786956915166229 ] } },
 { "type": "Feature", "properties": { "name": "P36", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 582684.724003443843685, 4147600.960583090782166 ] } },
 { "type": "Feature", "properties": { "name": "RED", "type": "obs_disabled" }, "geometry": { "type": "Point", "coordinates": [ 569540.359443616820499, 4151412.248878818470985 ] } },
-{ "type": "Feature", "properties": { "name": "ALA", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 561795.0, 4180713.0 ] } },
+{ "type": "Feature", "properties": { "name": "ALA", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 561020.056396227679215, 4180069.215775129385293 ] } },
 { "type": "Feature", "properties": { "name": "RIC", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 548648.0, 4198778.0 ] } },
 { "type": "Feature", "properties": { "name": "BOL", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 528277.0, 4195693.0 ] } },
 { "type": "Feature", "properties": { "name": "CHI", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 584340.697168451501057, 4212589.985445239581168 ] } },
@@ -265,6 +265,11 @@
 { "type": "Feature", "properties": { "name": "NOAA_Redwood", "type": "obs_disabled" }, "geometry": { "type": "Point", "coordinates": [ 569943.746119454270229, 4152396.006677071098238 ] } },
 { "type": "Feature", "properties": { "name": "NOAA_Richmond", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 552647.925548263825476, 4197938.638643557205796 ] } },
 { "type": "Feature", "properties": { "name": "NOAA_MareIslan", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 565786.937254911987111, 4213842.847350270487368 ] } },
-{ "type": "Feature", "properties": { "name": "Redwood", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 571096.634659608243965, 4153824.754702957812697 ] } }
+{ "type": "Feature", "properties": { "name": "Redwood", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 571096.634659608243965, 4153824.754702957812697 ] } },
+{ "type": "Feature", "properties": { "name": "HassElmira", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 611455.673565936391242, 4238833.32927652914077 ] } },
+{ "type": "Feature", "properties": { "name": "DSL", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 616873.418753057369031, 4208070.623620293103158 ] } },
+{ "type": "Feature", "properties": { "name": "JPT", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 614542.562286351923831, 4212134.929783124476671 ] } },
+{ "type": "Feature", "properties": { "name": "PRI", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 626582.706967925536446, 4213438.336541009135544 ] } },
+{ "type": "Feature", "properties": { "name": "GAR", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 646699.892937367316335, 4199946.98950804118067 ] } }
 ]
 }
