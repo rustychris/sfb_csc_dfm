@@ -375,9 +375,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         ulatis_ds.time.values[:] += np.timedelta64(8,'h') # convert to UTC
         ulatis_ds['flow']=ulatis_ds.flow_cfs*0.02832
         ulatis_ds['flow'].attrs['units']='m3 s-1'
-        ulatis_ds=self.pad_with_zero(ulatis_ds)
         
-        bc=hm.FlowBC(name='Ulatis',flow=ulatis_ds.flow,dredge_depth=self.dredge_depth)
+        bc=hm.FlowBC(name='Ulatis',flow=ulatis_ds.flow,dredge_depth=self.dredge_depth,
+                     filters=[hm.PadTime()])
         self.add_bcs(bc)
         
     def set_campbell_bc(self):
@@ -387,9 +387,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         campbell_ds['flow'].attrs['units']='m3 s-1'
         # Likewise, fairly sure this should be converted PST -> UTC
         campbell_ds.time.values[:] += np.timedelta64(8,'h')
-        
-        campbell_ds=self.pad_with_zero(campbell_ds)
-        bc=hm.FlowBC(name='Campbell',flow=campbell_ds.flow,dredge_depth=self.dredge_depth)
+
+        bc=hm.FlowBC(name='Campbell',flow=campbell_ds.flow,dredge_depth=self.dredge_depth,
+                     filters=[hm.PadTime()])
         self.add_bcs(bc)
 
     def set_lisbon_bc(self):
@@ -422,7 +422,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     def set_swp_bc(self):
         # CHSWP003 from hist.dss
         # /FILL+CHAN/CHSWP003/FLOW-EXPORT//1DAY/${HISTFLOWVERSION}/
-        self.log.warning("SWP not plumbed")
+        self.log.warning("TODO: Check SWP geometry")
 
         # cache_by_full_path=False to make it easier to share cached data across machines.
         SWP_data=dss.read_records(self.hist_dss,
@@ -434,8 +434,6 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         SWP_data.time.values[...] += self.utc_offset
 
         # Feature name is 'swp'
-        
-        self.log.warning("SWP not plumbed")
 
         # cfs
         da=xr.Dataset.from_dataframe(SWP_data.set_index('time'))['value']
@@ -468,22 +466,6 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     #  stockton effluent
     #
 
-    def pad_with_zero(self,ds,var='flow',pad=np.timedelta64(1,'D')):
-        """
-        Extend time to the padded extent of hte run, and extend the given variable with 
-        zeros. Modifies ds in place! Lazy code!
-        """
-        if self.run_stop+pad>ds.time[-1]:
-            self.log.warning("Will extend flow with 0 flow! (data end %s)"%(ds.time.values[-1]))
-            # with xarray, easier to just overwrite the last sample.  lazy lazy.
-            ds.time.values[-1] = self.run_stop+pad
-            ds[var].values[-1] = 0.0
-        if self.run_start-pad<ds.time[0]:
-            self.log.warning("Will prepend flow with 0 flow! (data starts %s)"%(ds.time.values[0]))
-            # with xarray, easier to just overwrite the last sample.  lazy lazy.
-            ds.time.values[0] = self.run_start - pad
-            ds[var].values[0] = 0.0
-        return ds
 
     dcd_omits_evaporation=True
     
@@ -536,6 +518,18 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         dfB.columns.name='node'
         
         df=pd.concat([dfA,dfB],axis=0)
+        df.sort_index(axis=1,inplace=True)
+        # DEV
+        if np.diff(df.columns.values).min() <= 0:
+            print("dfA")
+            print(dfA)
+            print()
+            print("dfB")
+            print(dfB)
+            print("Combined columns")
+            print(df.columns.values)
+            # so it's screwed up because the column names are in lexical order, not numberic
+            # that appears to be how they are read in. unclear if/how this ever worked.
         assert np.diff(df.columns.values).min() > 0,"Hmm - that was supposed to end up sorted"
         df=df.stack(0).unstack(0) # make nodes another row index, and source/sink will become columns
         ds=xr.Dataset.from_dataframe(df) # and now we get datetime and node as coordinates, and source/sink as variables.
