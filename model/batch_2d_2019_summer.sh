@@ -8,11 +8,13 @@
 #SBATCH --time 10-00:00:00
 
 conda activate general
+. prepenv.sh
 
-. /share/apps/intel-2019/bin/compilervars.sh intel64
-PREFIX=/home/rustyh/src/dfm/t140737
-export DFM_ROOT=$PREFIX/build/dfm/src/build_dflowfm-old/install
-export PATH=$PREFIX/bin:$PATH
-export LD_LIBRARY_PATH=$DFM_ROOT/lib:$PREFIX/lib:$LD_LIBRARY_PATH
+# . /share/apps/intel-2019/bin/compilervars.sh intel64
+# PREFIX=/home/rustyh/src/dfm/t140737
+export DFM_ROOT=$CONDA_PREFIX
+# export PATH=$PREFIX/bin:$PATH
+# export LD_LIBRARY_PATH=$DFM_ROOT/lib:$PREFIX/lib:$LD_LIBRARY_PATH
+
 
 python sfb_csc.py --run-dir data_2d_2019_summer -n 16 -l 0 -p 2019-04-01:2019-06-01 --salinity
