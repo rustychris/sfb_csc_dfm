@@ -270,6 +270,9 @@
 { "type": "Feature", "properties": { "name": "DSL", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 616873.418753057369031, 4208070.623620293103158 ] } },
 { "type": "Feature", "properties": { "name": "JPT", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 614542.562286351923831, 4212134.929783124476671 ] } },
 { "type": "Feature", "properties": { "name": "PRI", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 626582.706967925536446, 4213438.336541009135544 ] } },
-{ "type": "Feature", "properties": { "name": "GAR", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 646699.892937367316335, 4199946.98950804118067 ] } }
+{ "type": "Feature", "properties": { "name": "GAR", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 646699.892937367316335, 4199946.98950804118067 ] } },
+{ "type": "Feature", "properties": { "name": "VCU", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 629286.293038961011916, 4192539.698916658293456 ] } },
+{ "type": "Feature", "properties": { "name": "ORB", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 625656.988023422309197, 4194623.91722160205245 ] } },
+{ "type": "Feature", "properties": { "name": "DWF", "type": "obs" }, "geometry": { "type": "Point", "coordinates": [ 623486.858135059010237, 4259350.203868741169572 ] } }
 ]
 }
