@@ -411,8 +411,19 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         
         
     def set_ocean_bc(self):
-        tidal_bc = hm.NOAAStageBC(name='ocean',station=9414290,cache_dir=self.cache_dir,
+        # 9414290 is San Francisco.
+        # 9415020 is Point Reyes
+        # Forcing with SF led to tides at SF having 85% amplitude and +-1700s lag
+        # Switch to PR, and it's leading by 585s, and amplitude 1.178 (previous 85% might
+        # have been inverted).
+        # Added Transform() and amplitude is now spot on, but Lag(585s) was backwards.
+        # Trying -638...
+        # 
+        msl=0.938 # https://tidesandcurrents.noaa.gov/datums.html?datum=NAVD88&units=1&epoch=0&id=9415020&name=Point+Reyes&state=CA
+        tidal_bc = hm.NOAAStageBC(name='ocean',station=9415020,cache_dir=self.cache_dir,
                                   filters=[hm.FillTidal(),
+                                           hm.Lag(np.timedelta64(-638,'s')),
+                                           hm.Transform(fn=lambda h: (h-msl)/1.178+msl),
                                            hm.Lowpass(cutoff_hours=1.0)])
         self.add_bcs(tidal_bc)
 
