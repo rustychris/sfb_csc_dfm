@@ -27,6 +27,11 @@ ft_to_m=0.3048
 
 here=os.path.dirname(__file__)
 
+# Tidal propagation is way too fast everywhere, tidal amplitudes
+# and flows too large. Roughness outside given regions had defaulted
+# to 0.02. Will try 0.028 (v015)
+# 
+
 class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
     """
     Base model domain
@@ -91,7 +96,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         """
         # 6 is maybe better for getting good edges
         # but from the Pescadero work 5 was more stable
-        self.mdu['geometry','BedlevType']=5
+        # 2023-05-17: tide is propagating too quickly. Try type=3.
+        self.mdu['geometry','BedlevType']=3
 
         # fail out when it goes unstable.
         self.mdu['numerics','MinTimestepBreak']=0.01
@@ -102,7 +108,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         else:
             self.mdu['output','MapInterval']=3600
             
-        self.mdu['output','RstInterval']=86400
+        self.mdu['output','RstInterval']=5*86400
 
         if self.salinity:
             self.mdu['physics','Salinity']=1
@@ -418,7 +424,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         # have been inverted).
         # Added Transform() and amplitude is now spot on, but Lag(585s) was backwards.
         # Trying -638...
-        # 
+        # Changed some friction, too, and now amplitude is at 0.977.
+        # I think the Bay is a bit too frictional, just a bit.
+        # Propagation is too fast basically everywhere. Is there a problem with the bathy?
         msl=0.938 # https://tidesandcurrents.noaa.gov/datums.html?datum=NAVD88&units=1&epoch=0&id=9415020&name=Point+Reyes&state=CA
         tidal_bc = hm.NOAAStageBC(name='ocean',station=9415020,cache_dir=self.cache_dir,
                                   filters=[hm.FillTidal(),
@@ -659,9 +667,15 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             sac_below_ges=0.0225,
             steamboat=0.025,
             toe=0.0375,
-            upper_sac=0.0175)
+            upper_sac=0.0175,
+            # These came later. No optimization.
+            suisun=0.025,
+            lower_south_bay=0.03, # margins attenuation
+            central_delta=0.03, # amplitudes are quite high. kludge
+            south_delta=0.03, # ..
+        )
         
-        xyn=rr.settings_to_roughness_xyz(self,settings)
+        xyn=rr.settings_to_roughness_xyz(self,settings,default_n=0.028)
         # Turn that into a DataArray
         da=xr.DataArray( xyn[:,2],dims=['location'],name='n' )
         da=da.assign_coords(x=xr.DataArray(xyn[:,0],dims='location'),
