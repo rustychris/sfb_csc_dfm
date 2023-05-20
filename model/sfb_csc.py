@@ -284,37 +284,47 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         dem=field.MultiRasterField(bathy_sources)
 
         if 1:
-            node_z=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
-        if 0:
-            # from pescadero model
-            # Bias deep
-            # Maybe a good match with bedlevtype=5.
-            # BLT=5: edges get shallower node, cells get deepest edge.
-            # So extract edge depths (min,max,mean), and nodes get deepest
-            # edge.
-            alpha=np.linspace(0,1,8)
-            edge_min=np.zeros(g.Nedges(), np.float64)
+            node_z_direct=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
+        if 1:
+            node_z_bias_deep=self.node_bathy_bias_deep(dem,g)
 
-            # Find min depth of each edge:
-            for j in utils.progress(range(g.Nedges())):
-                pnts=(alpha[:,None] * g.nodes['x'][g.edges['nodes'][j,0]] +
-                      (1-alpha[:,None]) * g.nodes['x'][g.edges['nodes'][j,1]])
-                # There are some holes in the DEM and this is coming back with some nans.
-                z=dem(pnts)
-                edge_min[j]=np.nanmin(z)
-                if np.isnan(edge_min[j]):
-                    edge_min[j]=self.nodata_elevation
-
-            node_z=np.zeros(g.Nnodes())
-            for n in utils.progress(range(g.Nnodes())):
-                # This is the most extreme bias: nodes get the deepest
-                # of the deepest points along adjacent edgse
-                node_z[n]=edge_min[g.node_to_edges(n)].min()
-        
+        z_thresh=0.0 # [m NAVD88]
+        # Only bias deep in shallow areas. Otherwise maintain directly sampled elevations.
+        node_z=np.where( node_z_direct < z_thresh,
+                         node_z_direct,
+                         node_z_bias_deep.clip(z_thresh,np.inf))
         g.add_node_field('node_z_bed',node_z,on_exists='overwrite')
         g.write_ugrid(dst_grid_fn,overwrite=True)
             
         return g
+
+    def node_bathy_bias_deep(self,dem,g):
+        # from pescadero model
+        # Bias deep
+        # Maybe a good match with bedlevtype=5.
+        # BLT=5: edges get shallower node, cells get deepest edge.
+        # So extract edge depths (min,max,mean), and nodes get deepest
+        # edge.
+        alpha=np.linspace(0,1,8)
+        edge_min=np.zeros(g.Nedges(), np.float64)
+
+        # Find min depth of each edge:
+        for j in utils.progress(range(g.Nedges())):
+            pnts=(alpha[:,None] * g.nodes['x'][g.edges['nodes'][j,0]] +
+                  (1-alpha[:,None]) * g.nodes['x'][g.edges['nodes'][j,1]])
+            # There are some holes in the DEM and this is coming back with some nans.
+            z=dem(pnts)
+            edge_min[j]=np.nanmin(z)
+            if np.isnan(edge_min[j]):
+                edge_min[j]=self.nodata_elevation
+
+        node_z=np.zeros(g.Nnodes())
+        for n in utils.progress(range(g.Nnodes())):
+            # This is the most extreme bias: nodes get the deepest
+            # of the deepest points along adjacent edgse
+            node_z[n]=edge_min[g.node_to_edges(n)].min()
+        return node_z
+        
 
     def load_default_mdu(self):
         self.load_mdu(os.path.join(local_config.model_dir,'template.mdu'))
@@ -676,8 +686,11 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             central_delta=0.03, # amplitudes are quite high. kludge
             south_delta=0.03, # ..
         )
+
+        # with n=0.028 and the updated bathy settings (node elevations, bedlevtype=6)
+        # the bay was a bit attenuated and slow. Try 0.023
+        xyn=rr.settings_to_roughness_xyz(self,settings,default_n=0.023)
         
-        xyn=rr.settings_to_roughness_xyz(self,settings,default_n=0.028)
         # Turn that into a DataArray
         da=xr.DataArray( xyn[:,2],dims=['location'],name='n' )
         da=da.assign_coords(x=xr.DataArray(xyn[:,0],dims='location'),
