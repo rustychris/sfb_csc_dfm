@@ -7,7 +7,7 @@
 #SBATCH -N 1
 #SBATCH --time 8-00:00:00
 
-conda activate general
+conda activate general310
 
 . /share/apps/intel-2019/bin/compilervars.sh intel64
 PREFIX=/home/rustyh/src/dfm/t140737

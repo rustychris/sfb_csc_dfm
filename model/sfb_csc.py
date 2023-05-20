@@ -97,7 +97,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         # 6 is maybe better for getting good edges
         # but from the Pescadero work 5 was more stable
         # 2023-05-17: tide is propagating too quickly. Try type=3.
-        self.mdu['geometry','BedlevType']=3
+        # worse. Type=4 similarly bad. Changing to node sampling
+        # improved things, esp. in the Bay.
+        self.mdu['geometry','BedlevType']=6
 
         # fail out when it goes unstable.
         self.mdu['numerics','MinTimestepBreak']=0.01
@@ -281,9 +283,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         g=unstructured_grid.UnstructuredGrid.from_ugrid(src_grid_fn)
         dem=field.MultiRasterField(bathy_sources)
 
-        if 0:
-            node_z=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
         if 1:
+            node_z=dem_cell_node_bathy.dem_to_cell_node_bathy(dem,g)
+        if 0:
             # from pescadero model
             # Bias deep
             # Maybe a good match with bedlevtype=5.
