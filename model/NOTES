@@ -17,3 +17,17 @@ WTF.
 when run with z layers.
 
 Maybe there are some nan bed elevations?
+
+------------------------------------------------------------------------------------
+
+v021:
+  WSE amplitude goes from 0.98 at SF to 0.94 Richmond, 0.96 Port Chicago.
+  0.97-ish around Franks Tract, 0.94, 0.92 up through Liberty Island,
+  1.05 near Stockton, 0.79-0.76 around DCC (except 1.26x on the south side of
+  DCC), 0.8 by Freeport.
+
+  Slightly fast propagating north, although too slow getting to DCC.
+
+  Bias 0.06m *low* in the Bay across a few gages. Could pump it up 1%?
+  And SF is lagging 885s.
+
