@@ -440,13 +440,14 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         # I think the Bay is a bit too frictional, just a bit.
         # Propagation is too fast basically everywhere. Is there a problem with the bathy?
         # yes.
-        # -638s yielded SF being 858s late.
-        # /1.178 gave me 0.978 at SF.
+        # -638s yielded SF being 858s late. Looks like the lag sign is such that a
+        # positive phase error is compensated with a positive lag here
+        # /1.178 gave me 0.978 at SF. 1/1.165 gave me 0.987 
         msl=0.938 # https://tidesandcurrents.noaa.gov/datums.html?datum=NAVD88&units=1&epoch=0&id=9415020&name=Point+Reyes&state=CA
         tidal_bc = hm.NOAAStageBC(name='ocean',station=9415020,cache_dir=self.cache_dir,
                                   filters=[hm.FillTidal(),
-                                           hm.Lag(np.timedelta64(-638-850,'s')),
-                                           hm.Transform(fn=lambda h: (h-msl)/1.165+msl),
+                                           hm.Lag(np.timedelta64(-638+898,'s')),
+                                           hm.Transform(fn=lambda h: (h-msl)/1.155+msl),
                                            hm.Lowpass(cutoff_hours=1.0)])
         self.add_bcs(tidal_bc)
 
@@ -673,9 +674,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             cache=0.04,
             dws=0.025,
             elk=0.015,
-            fpt_to_dcc=0.030,
+            fpt_to_dcc=0.027,
             lindsey=0.04,
-            miner=0.035,
+            miner=0.03,
             rio_vista=0.025,
             sac_below_ges=0.02, # had been 0.0225
             steamboat=0.025,
@@ -683,9 +684,9 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             upper_sac=0.0175,
             # These came later. No optimization.
             suisun=0.025,
-            lower_south_bay=0.027, # margins attenuation
-            central_delta=0.03, # amplitudes are quite high. kludge
-            south_delta=0.02, # had been 0.03 -- good for stockton, but CCFB way low.
+            lower_south_bay=0.025, # margins attenuation
+            central_delta=0.027, # amplitudes are quite high. kludge
+            south_delta=0.018, # had been 0.03 -- good for stockton, but CCFB way low.
         )
 
         # with n=0.028 and the updated bathy settings (node elevations, bedlevtype=6)
