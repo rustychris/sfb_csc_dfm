@@ -354,19 +354,19 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
 
         self.set_roughness()
 
-        if self.dwaq:
-            self.setup_delwaq()
-            # advect zero-order nitrate production coefficient from Sac River
-            # self.add_bcs(dfm.DelwaqScalarBC(parent=sac, scalar='ZNit', value=1))
-            self.add_bcs(dfm.DelwaqScalarBC(parent=sac, scalar='RcNit', value=1))
-
-            sea_bcs=[dfm.DelwaqScalarBC(scalar='sea',parent=bc,value=1.0)
-                     for bc in tidal_bcs]
-            self.add_bcs(sea_bcs)
-
-            nonsac_bcs=[dfm.DelwaqScalarBC(scalar='nonsac',parent=bc,value=1.0)
-                        for bc in nonsac]
-            self.add_bcs(nonsac_bcs)
+        # if self.dwaq:
+        #     self.setup_delwaq()
+        #     # advect zero-order nitrate production coefficient from Sac River
+        #     # self.add_bcs(dfm.DelwaqScalarBC(parent=sac, scalar='ZNit', value=1))
+        #     self.add_bcs(dfm.DelwaqScalarBC(parent=sac, scalar='RcNit', value=1))
+        # 
+        #     sea_bcs=[dfm.DelwaqScalarBC(scalar='sea',parent=bc,value=1.0)
+        #              for bc in tidal_bcs]
+        #     self.add_bcs(sea_bcs)
+        # 
+        #     nonsac_bcs=[dfm.DelwaqScalarBC(scalar='nonsac',parent=bc,value=1.0)
+        #                 for bc in nonsac]
+        #     self.add_bcs(nonsac_bcs)
 
         if self.dcd:
             self.setup_dcd()
@@ -665,8 +665,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
                 pdb.set_trace()
             bc=hm.SourceSinkBC(name="DCD%04d"%n,flow=Q,geom=dfm_x)
             self.add_bcs([bc])
-            if self.dwaq:
-                self.add_bcs(dfm.DelwaqScalarBC(parent=bc,scalar='drain',value=1.0))
+            #if self.dwaq:
+            #    self.add_bcs(dfm.ScalarBC(parent=bc,scalar='drain',value=1.0))
         
     def set_roughness(self):
         # These are setting that came out of the optimization
@@ -831,6 +831,8 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         parser.add_argument("--resume",help="Resume a run from last restart time, or a YYYY-MM-DDTHH:MM:SS timestamp if given",
                             const='last',default=None,nargs='?')
 
+        parser.add_argument("-d","--dry",help="Do not actually start the simulation",action='store_true')
+
         args = parser.parse_args(argv)
 
         cls.driver_main(args)
@@ -946,6 +948,10 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
 
         model.partition()
 
+        if args.dry:
+            print("Dry run - skip actual simulation")
+            return
+            
         try:
             print(model.run_dir)
             if model.num_procs<=1:
