@@ -3,8 +3,15 @@
 2. Configure DWAQ tracers
    - need fresh compile that includes dwaq. Done.
    - set weight and tracers at BCs. Done for constant.
-   - weight, weight*ssc tracers with longer delay
-   - tau exposure with decay
+   - weight, weight*ssc tracers with longer delay. Done, not tested.
+   - tau exposure with decay - TROUBLE
+     DFM is not picking up any of the linked constituents, according to .dia file.
+       Is the message wrong, and it is finding them?
+         -- no. Salinity is maybe picking up the 32ppt BC, but is *not* a copy of sa1.
+         -- tau is all zero. The DFM tau is "taus".
+       Is it reading the substance file at all?
+  - probably the issue is that they need to be parameters, not substances.
+
 3. Run it via BMI
 4. Set tracers during run, internal to domain
 5. Extract correlates at the same time.
@@ -31,9 +38,13 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
         # HERE: regardless of tau vs Tau, dia file claims it's not connected.
         # Wut?
         # Does capitalization matter in the process??
-        self.dwaq.substances['tau']=waq.Substance(initial=0.0)
-        self.dwaq.substances['tauflow']=waq.Substance(initial=0.0)
-        self.dwaq.substances['VWind']=waq.Substance(initial=0.0)
+        # Upgraded to 142431, still no joy.
+        # trying with salinity, too.
+        # Okay - I think these were supposed to be parameters.
+        self.dwaq.parameters['tau']=0.0
+        # self.dwaq.substances['tauflow']=waq.Substance(initial=0.0)
+        self.dwaq.parameters['VWind']=0.0
+        self.dwaq.parameters['salinity']=0.0
         
         self.dwaq.substances['tauDecay']=waq.Substance(initial=0.0)
 

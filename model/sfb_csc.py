@@ -132,6 +132,27 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         else:
             self.mdu['physics','Idensform']=0 # no density effects
 
+        # Addressing complaints from dfm_t142431
+        keys_to_remove=[]
+        
+        if self.nlayers==0:
+            keys_to_remove+= [
+                ('geometry','Layertype'),
+                ('geometry','numtopsig'),
+                ('geometry','sigmagrowthfactor'),
+            ]
+        keys_to_remove+= [
+            ('numerics','transportmethod'),
+            ('numerics','qhrelax'),
+            ('physics','effectspiral'),
+            ('waves','wavenikuradse'),
+            ('trachytopes','trtdt'),
+            ('output','writebalancefile'),
+        ]
+        for k in keys_to_remove:
+            if k in self.mdu:
+                del self.mdu[k]
+
     layer_type='sigma' # 'sigma' or 'z'
     z_min=-20 # only relevant for layer_type='z'
     z_max=2
@@ -925,7 +946,6 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         else:
             model=cls(**kwargs)
 
-
         model.write() # this is now calling DFlowModel.write() for restarts
 
         # be careful with restarts
@@ -946,12 +966,14 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             with open(os.path.join(script_dir,'job_id'),'wt') as fp:
                 fp.write(f"{os.environ['SLURM_JOB_ID']}\n")
 
+        print("Partitioning")
         model.partition()
 
         if args.dry:
             print("Dry run - skip actual simulation")
             return
             
+        print("Starting simulation")
         try:
             print(model.run_dir)
             if model.num_procs<=1:

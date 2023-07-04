@@ -37,9 +37,9 @@ Bamin             = 1.d-6
 OpenBoundaryTolerance= 3
 RenumberFlowNodes = 1
 Kmx               = 0
-Layertype         = 1
-Numtopsig         = 0
-SigmaGrowthFactor = 1
+# Layertype         = 1
+# Numtopsig         = 0
+# SigmaGrowthFactor = 1
 
 [numerics]
 CFLMax            = 0.7
@@ -48,7 +48,7 @@ TimeStepType      = 2
 Limtyphu          = 0
 Limtypmom         = 4
 Limtypsa          = 4
-TransportMethod   = 1
+# TransportMethod   = 1
 Vertadvtypsal     = 5
 Icgsolver         = 4
 Maxdegree         = 6
@@ -63,7 +63,7 @@ Tlfsmo            = 0
 Slopedrop2D       = 0
 Chkadvd           = 0.1
 Teta0             = 0.55
-Qhrelax           = 0.01
+# Qhrelax           = 0.01
 Jbasqbnddownwindhs= 0
 cstbnd            = 0
 Maxitverticalforestersal= 100
@@ -111,7 +111,7 @@ Stanton           = -1
 Dalton            = -1
 Backgroundwatertemperature= 6
 SecondaryFlow     = 0
-EffectSpiral      = 0
+# EffectSpiral      = 0
 BetaSpiral        = 0
 
 [wind]
@@ -124,7 +124,7 @@ PavIni            = 0
 
 [waves]
 Wavemodelnr       = 0
-WaveNikuradse     = 0.01
+# WaveNikuradse     = 0.01
 Rouwav            = FR84
 Gammax            = 1
 
@@ -151,7 +151,7 @@ ExtForceFileNew   =
 TrtRou            = N
 TrtDef            =
 TrtL              =
-TrtDt             = 60
+# TrtDt             = 60
 
 [output]
 OutputDir         =
@@ -167,7 +167,7 @@ RstInterval       = 0
 S1incinterval     =
 WaqInterval       = 
 StatsInterval     =
-Writebalancefile  = 0
+# Writebalancefile  = 0
 TimingsInterval   =
 MapFormat         = 4
 Wrihis_balance    = 1
