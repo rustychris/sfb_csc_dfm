@@ -7,14 +7,14 @@
 #SBATCH -N 1
 #SBATCH --time 10-00:00:00
 
-conda activate general
-. prepenv.sh
+conda activate dfm_t142431
+export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 # . /share/apps/intel-2019/bin/compilervars.sh intel64
 # PREFIX=/home/rustyh/src/dfm/t140737
 export DFM_ROOT=$CONDA_PREFIX
 # Trying to use DELFT_SRC to get share path, so it can find proc_def
-export DELFT_SRC=
+# export DELFT_SRC=$CONDA_PREFIX/build/dfm/
 # export PATH=$PREFIX/bin:$PATH
 # export LD_LIBRARY_PATH=$DFM_ROOT/lib:$PREFIX/lib:$LD_LIBRARY_PATH
 

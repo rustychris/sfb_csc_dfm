@@ -114,6 +114,11 @@ class CustomProcesses:
                            conc_decay=rate)
         self.custom_procs.append(proc_txt)
 
+    def custom_ExpFilter(self,sub_in,sub_out,rate):
+        self.custom_Decay(sub_out,rate)
+        proc_txt=self.CART(conc=sub_in, age_conc=sub_out, partial_default=rate)
+        self.custom_procs.append(proc_txt)
+
     def CART(self, conc_decay=0.0, **kw):
         idx=self.copy_count['CART']
         self.copy_count['CART']+=1
@@ -123,6 +128,7 @@ class CustomProcesses:
                zero_order="ZAge"+suffix,
                partial="PartAge"+suffix,
                conc=f"Age{suffix}Conc",
+               partial_default=1.0,
                age_conc=f"Age{suffix}AConc",
                flux="dAge"+suffix)
         p.update(kw)
@@ -151,7 +157,7 @@ NITRIF    ; module name.
 123       ; TRswitch
         18; # input items for segments
 {p['zero_order']:10}      0.00000     x zeroth-order flux          (g/m3/d)
-{p['partial']   :10}      1.00000     x set this to get partial age
+{p['partial']   :10}      {p['partial_default']: 8g}     x set this to get partial age
 RcNit20        0.100000     x ignored (b/c SWVnNit=0)
 TcNit           1.00000     x ignored
 OXY             10.0000     x ignored

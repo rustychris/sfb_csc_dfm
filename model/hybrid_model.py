@@ -26,6 +26,15 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
         self.dwaq.substances['wt_obs']=waq.Substance(initial=0.0)
         self.dwaq.substances['wt']=waq.Substance(initial=0.0)
 
+        # This *should* be enough to trigger DFM passing it to DWAQ
+        # Tried with 'Tau' and the dia file suggested it was not connected.
+        # HERE: regardless of tau vs Tau, dia file claims it's not connected.
+        # Wut?
+        # Does capitalization matter in the process??
+        self.dwaq.substances['tau']=waq.Substance(initial=0.0)
+        self.dwaq.substances['tauflow']=waq.Substance(initial=0.0)
+        self.dwaq.substances['VWind']=waq.Substance(initial=0.0)
+        
         self.dwaq.substances['tauDecay']=waq.Substance(initial=0.0)
 
         # Are the BCs already in place?
@@ -43,8 +52,20 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
 
         # Is it possible to use the nitrification process for exponential
         # filter on bed stress and/or wind exposure?
+        
         # I'm looking for d tauDecay / dt = k*(tau-tauDecay)
+        #                                 = k*tau - k*tauDecay
+
+        # one way is to include two nitrification processes:
+        #  custom_Decay(substance='tauDecay',rate=tauDecayRate)
+        #  custom_CART(substance='Tau',age_substance='tauDecay',partial=tauDecayRate))
+
+        # The CART code is basically this:
+        #     d conc / dt = -conc_decay*partial * conc
+        # d age_conc / dt =             partial * conc
+
         self.dwaq.substances['tauDecay']=waq.Substance(initial=0.0)
+        self.custom_ExpFilter(sub_in='tau',sub_out='tauDecay',rate=8.0)
         
         
 if __name__=='__main__':
