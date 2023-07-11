@@ -7,3 +7,4 @@ output.csv
 dsm2_gates.py
 slurm_out*
 .ipynb_checkpoints
+sync_run.sh
