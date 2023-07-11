@@ -46,7 +46,8 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
         self.dwaq.parameters['VWind']=0.0
         self.dwaq.parameters['salinity']=0.0
         
-        self.dwaq.substances['tauDecay']=waq.Substance(initial=0.0)
+        self.dwaq.substances['tauDecay1']=waq.Substance(initial=0.0)
+        self.dwaq.substances['tauDecay2']=waq.Substance(initial=0.0)
 
         # Are the BCs already in place?
         # happens in sfb_csc set_bcs(), called from sfb_csc configure
@@ -75,9 +76,12 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
         #     d conc / dt = -conc_decay*partial * conc
         # d age_conc / dt =             partial * conc
 
-        self.dwaq.substances['tauDecay']=waq.Substance(initial=0.0)
-        self.custom_ExpFilter(sub_in='tau',sub_out='tauDecay',rate=8.0)
-        
+        self.dwaq.substances['tauDecay1']=waq.Substance(initial=0.0)
+        self.custom_ExpFilter(sub_in='tau',sub_out='tauDecay1',rate=16.0)
+
+        self.dwaq.substances['tauDecay2']=waq.Substance(initial=0.0)
+        self.custom_ExpFilter(sub_in='tau',sub_out='tauDecay2',rate=1.0)
+
         
 if __name__=='__main__':
     # For testing, hardcode the settings

@@ -18,4 +18,4 @@ export DFM_ROOT=$CONDA_PREFIX
 # export PATH=$PREFIX/bin:$PATH
 # export LD_LIBRARY_PATH=$DFM_ROOT/lib:$PREFIX/lib:$LD_LIBRARY_PATH
 
-python -u hybrid_model.py --run-dir data_2d_2019_hybrid -n 16 -l 0 -p 2019-04-01:2019-04-02 --salinity
+python -u hybrid_model.py --run-dir data_2d_2019_hybrid -n 16 -l 0 -p 2019-04-01:2019-06-01 --salinity
