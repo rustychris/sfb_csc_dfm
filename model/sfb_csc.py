@@ -822,15 +822,14 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
             bc.write_bokeh(path=self.run_dir)
 
     @classmethod
-    def main(cls,argv):
+    def arg_parser(cls):
         import argparse
-
         parser = argparse.ArgumentParser(description='Run SFE model with CSC focus.')
 
         parser.add_argument('-n','--num-cores',help='Number of cores',
                             default=local_config.LocalConfig.num_procs, type=int)
 
-        parser.add_argument('--mdu',help='Path to MDU file for restarts')
+        parser.add_argument('--mdu',help='Path to MDU file for restarts or BMI invocation')
 
         parser.add_argument('-s','--scenario',help='Select scenario (scen1,scen2,scen2)',
                             default=cls.scenario)
@@ -853,9 +852,12 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
                             const='last',default=None,nargs='?')
 
         parser.add_argument("-d","--dry",help="Do not actually start the simulation",action='store_true')
-
+        return parser
+    
+    @classmethod
+    def main(cls,argv):
+        parser = cls.arg_parser()
         args = parser.parse_args(argv)
-
         cls.driver_main(args)
 
     @classmethod
@@ -946,7 +948,7 @@ class SfbCsc(local_config.LocalConfig,dfm.DFlowModel):
         else:
             model=cls(**kwargs)
 
-        model.write() # this is now calling DFlowModel.write() for restarts
+        model.write() 
 
         # be careful with restarts
         script_dir=model.run_dir
