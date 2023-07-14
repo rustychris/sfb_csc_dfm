@@ -42,11 +42,12 @@ import stompy.model.hydro_model as hm
 import numpy as np
 import custom_process as custom
 import os
+import time
 
 
-class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
-    dwaq=True # gets replaced by a WaqOnlineModel instance during configure()
-
+class HybridModel(sfb_csc.SfbCsc):
+    dt=900.0 # update interval, in seconds. Used on class, not instance.
+    
     # Invocation machinery
     @classmethod
     def arg_parser(cls):
@@ -133,32 +134,6 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
             logging.info("dir(sim)")
             logging.info(str(dir(sim)))
 
-        # DFM expects some commandline options, which for BMI are specific variables
-        # First attempt DFM came back with '/'
-        #  np.array(waq_proc_def)
-        #proc_def = sim.get_var("processlibrary")
-        #logging.info(f"existing proc_def is {proc_def}")
-        # This also comes back with '/'
-        # sim.set_var("processlibrary",np.array([local_config.LocalConfig.waq_proc_def]))
-        # this yields ** ERROR  : Process library file does not exist: 0ñº;
-        # sim.set_var("processlibrary",np.array(local_config.LocalConfig.waq_proc_def,dtype=object))
-
-        # mimic what's going on inside wrapper:
-        if 1:
-            name = bmi.wrapper.create_string_buffer("processlibrary")
-            type_ = bmi.wrapper.create_string_buffer(1024)
-            sim.library.get_var_type.argtypes = [c_char_p, c_char_p]
-            sim.library.get_var_type(name, type_)
-            logging.info(f"get_var_type => {type_}")
-            # type_: <bmi.wrapper.c_char_Array_1024 object at 0x1460b74d37c0>
-            logging.info(f"get_var_type.value => {type_.value}")
-            # .value => b''
-            # return type_.value
-            # 
-        
-        sim.set_var("processlibrary",np.array([local_config.LocalConfig.waq_proc_def]))
-
-        dt=900.0 # update interval
 
         mdu=dio.MDUFile(args.mdu)
 
@@ -190,6 +165,7 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
             t_now=sim.get_current_time()
 
             # update...
+            cls.update_tracers(sim,t_now,cls.dt)
 
             # HERE: setup serial run, pause here and check for availability
             # of dwaq tracers
@@ -198,11 +174,13 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
                 logging.info("dir(sim)")
                 logging.info(str(dir(sim)))
 
+                for var_i in range(sim.get_var_count()):
+                    logging.info(f"var {var_i}: {sim.get_var_name(var_i)}")
                 
             t_bmi+=time.time() - t_last
             t_last=time.time()
-            logging.info(f'taking a step dt={dt}')
-            sim.update(dt)
+            logging.info(f'taking a step dt={cls.dt}')
+            sim.update(cls.dt)
             logging.info('Back from step')
             t_calc+=time.time() - t_last
             t_last=time.time()
@@ -210,7 +188,7 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
             # Running via BMI will not fail out when the time step gets too short, but it will
             # return back to here without going as far as we requested.
             t_post=sim.get_current_time()
-            if t_post<t_now+0.75*dt:
+            if t_post<t_now+0.75*cls.dt:
                 logging.error("Looks like run has stalled out.")
                 logging.error(f"Expected a step from {t_now} to {t_now+dt} but only got to {t_post}")
                 logging.error("Will break out")
@@ -221,61 +199,55 @@ class HybridModel(custom.CustomProcesses, sfb_csc.SfbCsc):
 
         sim.finalize()
 
-    
+    @classmethod
+    def update_tracers(cls, sim, t_now, dt_s):
+        # Decay for wt, wt_obs
+        weight_decay_time = 3*3600.
+        decay0_time=3600.
+        decay1_time=86400.
+        
+        fac=np.exp(-dt_s/weight_decay_time)
+
+        for vname in ['wt','wt_obs']:
+            data=sim.get_var(vname)
+            data *= fac
+            sim.set_var(vname,data)
+
+        # This is 2D!  Maybe it will be okay for a 2D run. But might have shape trouble.
+        tau = sim.get_var('taus') # cell centre tau N/m2 {"location": "face", "shape": ["ndx"]}
+        
+        tauDecay0 = sim.get_var('tauDecay0')
+        fac0=np.exp(-dt_s/decay0_time)
+        tauDecay0[:] = tauDecay0*fac + (1-fac)*tau
+        sim.set_var('tauDecay0',tauDecay0)
+        
+        fac1=np.exp(-dt_s/decay1_time)
+        tauDecay1 = sim.get_var('tauDecay1')
+        tauDecay1[:] = tauDecay1*fac + (1-fac)*tau
+        sim.set_var('tauDecay1',tauDecay1)
+        
     # Model setup
     def configure(self):
         super().configure()
         self.add_hybrid_tracers()
-    def add_hybrid_tracers(self):
-        self.dwaq.substances['wt_obs']=waq.Substance(initial=0.0)
-        self.dwaq.substances['wt']=waq.Substance(initial=0.0)
-
-        # These will get connected to dfm (if the hydro includes them)
-        self.dwaq.parameters['tau']=0.0
-        self.dwaq.parameters['VWind']=0.0
-        self.dwaq.parameters['salinity']=0.0
         
-        self.dwaq.substances['tauDecay1']=waq.Substance(initial=0.0)
-        self.dwaq.substances['tauDecay2']=waq.Substance(initial=0.0)
-
-        # Are the BCs already in place?
-        # happens in sfb_csc set_bcs(), called from sfb_csc configure
-
+    def add_hybrid_tracers(self):
+        # Will tracers default to 0 initial condition and BC value?
+        
+        # BCs will already in place when this is called 
+        # (sfb_csc...set_bcs(), called from sfb_csc...configure())
+        self.tracers += ['wt_obs','wt','tauDecay0','tauDecay1']
+        
         # For initial test, tag Sac inflow
         sac=self.scalar_parent_bc("SacramentoRiver")
         sac_wt_obs = hm.ScalarBC(parent=sac,scalar='wt_obs',value=10.0)
         sac_wt = hm.ScalarBC(parent=sac,scalar='wt',value=1.0)
-        self.add_bcs([sac_wt,sac_wt_obs])
+        sac_tauDecay0 = hm.ScalarBC(parent=sac,scalar='tauDecay0',value=0.0)
+        sac_tauDecay1 = hm.ScalarBC(parent=sac,scalar='tauDecay1',value=0.0)
+        self.add_bcs([sac_wt,sac_wt_obs,sac_tauDecay0,sac_tauDecay1])
 
-        # Straight exponential decay with configurable rate.
-        self.custom_Decay(substance='wt_obs',rate=0.2)
-        self.custom_Decay(substance='wt',rate=0.2)
-
-        # Is it possible to use the nitrification process for exponential
-        # filter on bed stress and/or wind exposure?
-        
-        # I'm looking for d tauDecay / dt = k*(tau-tauDecay)
-        #                                 = k*tau - k*tauDecay
-
-        # one way is to include two nitrification processes:
-        #  custom_Decay(substance='tauDecay',rate=tauDecayRate)
-        #  custom_CART(substance='Tau',age_substance='tauDecay',partial=tauDecayRate))
-
-        # The CART code is basically this:
-        #     d conc / dt = -conc_decay*partial * conc
-        # d age_conc / dt =             partial * conc
-
-        self.dwaq.substances['tauDecay1']=waq.Substance(initial=0.0)
-        self.custom_ExpFilter(sub_in='tau',sub_out='tauDecay1',rate=16.0)
-
-        self.dwaq.substances['tauDecay2']=waq.Substance(initial=0.0)
-        self.custom_ExpFilter(sub_in='tau',sub_out='tauDecay2',rate=1.0)
 
         
 if __name__=='__main__':
-    # For testing, hardcode the settings
-    #argv=["-n","1",
-    #      "-p","2019-04-01:2019-04-02",
-    #      "-l","0"]
     HybridModel.main(sys.argv[1:])
 

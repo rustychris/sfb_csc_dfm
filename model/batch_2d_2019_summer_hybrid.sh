@@ -1,11 +1,13 @@
 #!/bin/bash -l
 #SBATCH --job-name sfb_csc
-#SBATCH -o slurm_out-%j.output
-#SBATCH -e slurm_out-%j.output
+#SBATCH -o slurm_out.output
+#SBATCH -e slurm_out.output
 #SBATCH --partition high2
 #SBATCH -n 32
 #SBATCH -N 1
 #SBATCH --time 10-00:00:00
+
+# used to have -%j in output names
 
 conda activate dfm_t142431
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
@@ -18,4 +20,8 @@ export DFM_ROOT=$CONDA_PREFIX
 # export PATH=$PREFIX/bin:$PATH
 # export LD_LIBRARY_PATH=$DFM_ROOT/lib:$PREFIX/lib:$LD_LIBRARY_PATH
 
-python -u hybrid_model.py --run-dir data_2d_2019_hybrid -n 16 -l 0 -p 2019-04-01:2019-06-01 --salinity
+python -u hybrid_model.py --run-dir data_2d_2019_hybrid -n 16 -l 0 -p 2019-04-01:2019-04-02 --salinity
+
+# sample direct call:
+#srun -n 16 --mpi=pmi2 -o job-hybrid-%2t.out python /home/rustyh/src/sfb_csc_dfm/model/hybrid_model.py --bmi --mpi=slurm --mdu data_2d_2019_hybrid-v003/flowfm.mdu
+
