@@ -51,6 +51,10 @@ import xarray as xr
 class HybridModel(sfb_csc.SfbCsc):
     dt=900.0 # update interval, in seconds. Used on class, not instance.
     
+    expand_release_cell = 3 # iterations to expand the region that is updated at a data point.
+
+    obs_field='turbidity' # controls which monitoring dataset is loaded, and the field name in that file
+
     # Invocation machinery
     @classmethod
     def arg_parser(cls):
@@ -212,7 +216,9 @@ class HybridModel(sfb_csc.SfbCsc):
         sim.finalize()
 
     def load_observations(self):
-        obs_fn=os.path.join( os.path.dirname(__file__), "../data/usgs_nwis/turbidity-2019-04-01-2019-08-01.nc")
+        #obs_fn=os.path.join( os.path.dirname(__file__), "../data/usgs_nwis/turbidity-2019-04-01-2019-08-01.nc")
+        obs_fn=os.path.join( os.path.dirname(__file__), f"../data/usgs_nwis/{self.obs_field}-2018-04-01-2018-11-01.nc")
+        
         ds=xr.open_dataset(obs_fn)
 
         ll=np.c_[ds['lon'].values, ds['lat'].values]
@@ -301,8 +307,13 @@ class HybridModel(sfb_csc.SfbCsc):
             # the grid. No need to be overly cautious here
             cell=self.g_int.select_cells_nearest(xy)
             weights=np.zeros(self.g_int.Ncells(),np.float64)
-            # Could expand/diffuse on the global grid right now...
-            weights[cell]=1.0
+            cells=set([cell])
+            # Expand/diffuse on the global grid 
+            for _ in range(self.expand_release_cell):
+                for c in list(cells):
+                    cells.update(self.g_int.cell_to_cells(c))
+            cells=np.array(list(cells))
+            weights[cells]=1.0
             nonzero_cells=np.nonzero(weights>0.01)[0] # or some threshold.
             nonzero_weights=weights[nonzero_cells]
             # These are still on the global grid
@@ -315,10 +326,9 @@ class HybridModel(sfb_csc.SfbCsc):
             stencil['cell'][:]=local_cells
             stencil['weight'][:]=local_weights
             site_stencils[site_i]=stencil
-        # This was failing. Trying now with more explicit construction
         ds['stencil']=('site',),site_stencils
         
-    obs_field='turbidity'
+    
     def update_observations(self,t,wt,wt_obs):
         """
         t: current time as datetime64
@@ -334,7 +344,7 @@ class HybridModel(sfb_csc.SfbCsc):
             val = ds[self.obs_field].isel(time=t_idx,site=site_i).item()
             if np.isnan(val): continue
             # without the item(), it failed because 'weight' wasn't understood.
-            stencil=ds['stencil'].isel(site=site_i).item() # ?
+            stencil=ds['stencil'].isel(site=site_i).item() 
 
             # Currently only handles weight=1 case
             # Having some global/local friction here.
@@ -391,15 +401,13 @@ class HybridModel(sfb_csc.SfbCsc):
         # (sfb_csc...set_bcs(), called from sfb_csc...configure())
         self.tracers += ['wt_obs','wt','tauDecay0','tauDecay1']
         
-        # For initial test, tag Sac inflow
+        # Need to mention the tracers somewhere in order for them to be created.
         sac=self.scalar_parent_bc("SacramentoRiver")
-        sac_wt_obs = hm.ScalarBC(parent=sac,scalar='wt_obs',value=10.0)
-        sac_wt = hm.ScalarBC(parent=sac,scalar='wt',value=1.0)
+        sac_wt_obs = hm.ScalarBC(parent=sac,scalar='wt_obs',value=0.0)
+        sac_wt = hm.ScalarBC(parent=sac,scalar='wt',value=0.0)
         sac_tauDecay0 = hm.ScalarBC(parent=sac,scalar='tauDecay0',value=0.0)
         sac_tauDecay1 = hm.ScalarBC(parent=sac,scalar='tauDecay1',value=0.0)
         self.add_bcs([sac_wt,sac_wt_obs,sac_tauDecay0,sac_tauDecay1])
-
-
         
 if __name__=='__main__':
     HybridModel.main(sys.argv[1:])
