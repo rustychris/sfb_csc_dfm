@@ -53,7 +53,9 @@ class HybridModel(sfb_csc.SfbCsc):
     
     expand_release_cell = 3 # iterations to expand the region that is updated at a data point.
 
-    obs_field='turbidity' # controls which monitoring dataset is loaded, and the field name in that file
+    # controls which monitoring datasets are loaded, and the field name in that file
+    # Keep these short so we can use them as the prefix for tracers.
+    obs_fields=['turb','cond','chl'] 
 
     # Invocation machinery
     @classmethod
@@ -166,7 +168,8 @@ class HybridModel(sfb_csc.SfbCsc):
         sim.initialize(args.mdu) # changes working directory to where mdu is.
         logging.info(f"[{rank}] initialized")
 
-
+        self.load_partition_info()
+        
         self.init_observations()
         
         # if rank==0:
@@ -215,9 +218,9 @@ class HybridModel(sfb_csc.SfbCsc):
 
         sim.finalize()
 
-    def load_observations(self):
-        #obs_fn=os.path.join( os.path.dirname(__file__), "../data/usgs_nwis/turbidity-2019-04-01-2019-08-01.nc")
-        obs_fn=os.path.join( os.path.dirname(__file__), f"../data/usgs_nwis/{self.obs_field}-2018-04-01-2018-11-01.nc")
+    def load_observations(self,field):
+        #obs_fn=os.path.join( os.path.dirname(__file__), "../data/usgs_nwis/turb-2019-04-01-2019-08-01.nc")
+        obs_fn=os.path.join( os.path.dirname(__file__), f"../data/usgs_nwis/{field}-2018-04-01-2018-11-01.nc")
         
         ds=xr.open_dataset(obs_fn)
 
@@ -226,55 +229,17 @@ class HybridModel(sfb_csc.SfbCsc):
         ds['x']=ds['lon'].dims,utm[:,0]
         ds['y']=ds['lat'].dims,utm[:,1]
         return ds
-    
-    def init_observations(self):
-        self.obs_ds=self.load_observations()
 
-        # Figure out our local grid, too.
-        # While we could load the partitioned net file, DFM may have renumbered the grid
-        # so it's safer to load from BMI data.
-        # there are ..
-        #  netelemnode dim 2
-        #  flowelemnode, flowelemnbs, flowelemnlns  dim 2
-        #  flowelemcontour_{x,y}  dim 2
-
-        # or.... iglobal_s: "global flow node numbers"
+    def load_partition_info(self):
+        """
+        Populate g_int, iglobal_s, ilocal_to_global, iglobal_to_local
+        """
+        # Figure out our local grid, too. Partitioned net file is sometimes renumbered. 
+        # Load the partition information from BMI data,
+        #  iglobal_s: "global flow node numbers"
         # get_var documentations says this should correspond to "original unpartitioned flow node numbers"
         # Note that it includes boundary "elements"
 
-        # # For debugging: log local grid to a netcdf so we can figure this out visually
-        # sim=self.sim
-        # ds_log=xr.Dataset()
-        # self.log.warning("Read netelemnode")
-        # ds_log['netelemnode']=('nump1d2d','net_elem_max_nodes'), sim.get_var('netelemnode')
-        # self.log.warning("Read flowelemnode")
-        # ds_log["flowelemnode"]=('ndx2d','flow_elem_max_nodes'),sim.get_var('flowelemnode')
-        # # Adjacency, presumably cell:cell
-        # self.log.warning("Read flowelemnbs")
-        # ds_log["flowelemnbs"]=('ndx','flow_elem_max_nbs'), sim.get_var('flowelemnbs')
-        # # Adjacency, cell:face
-        # self.log.warning("Read flowelemlns")
-        # ds_log["flowelemlns"]=('ndx','flow_elem_max_nbs'), sim.get_var('flowelemlns')
-        # #self.log.warning("Read flowelemcontour_x")
-        # #ds_log["flowelemcontour_x"]=('ndx','flow_elem_max_contour'),sim.get_var('flowelemcontour_x')
-        # #self.log.warning("Read flowelemcontour_y") # Triggers bug. array already allocated
-        # #ds_log["flowelemcontour_y"]=('ndx','flow_elem_max_contour'),sim.get_var('flowelemcontour_y')
-        # self.log.warning("Read iglobal_s")
-        # ds_log["iglobal_s"]=('ndx',),sim.get_var('iglobal_s')
-        # self.log.warning("Read ndxi")
-        # ds_log["ndxi"] = (),sim.get_var('ndxi') # 2D+1D flowcells
-        # self.log.warning("Read ndx1db")
-        # ds_log["ndx1db"] =(),sim.get_var('ndx1db') # flow nodes incl. 1D bnds. 2D+1D+1D bnds
-        # self.log.warning("Read lnxi")
-        # ds_log["lnxi"]=(),sim.get_var('lnxi') # flow links, 1D and 2D
-        # self.log.warning("Read xk")
-        # ds_log["xk"]=('numk'),sim.get_var('xk') # node coordinates?
-        # ds_log["yk"]=('numk'),sim.get_var('yk') # node coordinates?
-        # self.log.warning("Read xz")
-        # ds_log["xz"]=("ndx"),sim.get_var('xz') # cell centers
-        # ds_log["yz"]=("ndx"),sim.get_var('yz') # cell centers
-        # ds_log.to_netcdf(f"bmi-grid-{self.rank:04d}.nc")
-        
         # the "interpreted" global grid. This should match up with iglobal_s-1 in the partitioned
         # grids.
         # Note that with BMI, by the time this is executed we have changed
@@ -298,50 +263,67 @@ class HybridModel(sfb_csc.SfbCsc):
         for c_local,c_global in enumerate(self.ilocal_to_global):
             self.iglobal_to_local[c_global]=c_local
 
-        ds=self.obs_ds
-        site_stencils=np.zeros(ds.dims['site'],dtype=object)
-        for site_i in range(ds.dims['site']):
-            xy=np.r_[ ds['x'].isel(site=site_i),
-                      ds['y'].isel(site=site_i) ]
-            # prescreened these to be sure sites actually lined up with
-            # the grid. No need to be overly cautious here
-            cell=self.g_int.select_cells_nearest(xy)
-            weights=np.zeros(self.g_int.Ncells(),np.float64)
-            cells=set([cell])
-            # Expand/diffuse on the global grid 
-            for _ in range(self.expand_release_cell):
-                for c in list(cells):
-                    cells.update(self.g_int.cell_to_cells(c))
-            cells=np.array(list(cells))
-            weights[cells]=1.0
-            nonzero_cells=np.nonzero(weights>0.01)[0] # or some threshold.
-            nonzero_weights=weights[nonzero_cells]
-            # These are still on the global grid
-            local_cells=self.iglobal_to_local[nonzero_cells] # some of these will be negative
-            valid=local_cells>=0
-            local_cells=local_cells[valid]
-            local_weights=nonzero_weights[valid]
             
-            stencil=np.zeros(len(local_cells),dtype=[ ('cell',np.int32), ('weight',np.float64) ])
-            stencil['cell'][:]=local_cells
-            stencil['weight'][:]=local_weights
-            site_stencils[site_i]=stencil
-        ds['stencil']=('site',),site_stencils
+    def init_observations(self):
+        self.obs_dss={} # map field name to dataset
+        
+        for field in self.obs_fields:
+            ds=self.load_observations(field)
+            self.obs_dss[field]=ds
+
+            # Annotate ds with stencil information
+            site_stencils=np.zeros(ds.dims['site'],dtype=object)
+            for site_i in range(ds.dims['site']):
+                xy=np.r_[ ds['x'].isel(site=site_i),
+                          ds['y'].isel(site=site_i) ]
+                # prescreened these to be sure sites actually lined up with
+                # the grid. No need to be overly cautious here
+                cell=self.g_int.select_cells_nearest(xy)
+                weights=np.zeros(self.g_int.Ncells(),np.float64)
+                cells=set([cell])
+                # Expand/diffuse on the global grid 
+                for _ in range(self.expand_release_cell):
+                    for c in list(cells):
+                        cells.update(self.g_int.cell_to_cells(c))
+                cells=np.array(list(cells))
+                weights[cells]=1.0
+                nonzero_cells=np.nonzero(weights>0.01)[0] # or some threshold.
+                nonzero_weights=weights[nonzero_cells]
+                # These are still on the global grid
+                local_cells=self.iglobal_to_local[nonzero_cells] # some of these will be negative
+                valid=local_cells>=0
+                local_cells=local_cells[valid]
+                local_weights=nonzero_weights[valid]
+
+                stencil=np.zeros(len(local_cells),dtype=[ ('cell',np.int32), ('weight',np.float64) ])
+                stencil['cell'][:]=local_cells
+                stencil['weight'][:]=local_weights
+                site_stencils[site_i]=stencil
+            ds['stencil']=('site',),site_stencils
         
     
-    def update_observations(self,t,wt,wt_obs):
+    def update_observations(self,t,wt,wt_obs,field):
         """
         t: current time as datetime64
         """
-        ds=self.obs_ds
+        ds=self.obs_dss[field]
         # First cut has a global time array
         if t<ds.time.values[0]: return
         if t>ds.time.values[-1]: return
 
         t_idx=np.searchsorted(ds.time.values, t)
+
+        # outdated kludge...
+        # if field=='turb':
+        #     vname='turbidity'
+        # elif field=='cond':
+        #     vname='spec_cond'
+        # else:
+        vname=field
         
         for site_i in range(ds.dims['site']):
-            val = ds[self.obs_field].isel(time=t_idx,site=site_i).item()
+            
+            val = ds[vname].isel(time=t_idx,site=site_i).item()
             if np.isnan(val): continue
             # without the item(), it failed because 'weight' wasn't understood.
             stencil=ds['stencil'].isel(site=site_i).item() 
@@ -351,32 +333,42 @@ class HybridModel(sfb_csc.SfbCsc):
             # Pretty sure stencil is coming in global.
             wt[stencil['cell']]=stencil['weight']
             wt_obs[stencil['cell']] = stencil['weight'] * val
-        
+
+    def tracer_names(self,field):
+        return field+'_wt', field+'_wtobs'
+            
     def update_tracers(self, t, dt_s):
         """
         t: current time as np.datetime64
         dt_s: time step between calls to update_tracer, in seconds
         """
         sim=self.sim
-        # Decay for wt, wt_obs
-        weight_decay_time = 3*3600.
-        decay0_time=3600.
-        decay1_time=86400.
-        
-        fac=np.exp(-dt_s/weight_decay_time)
 
-        wt=sim.get_var('wt')
-        wt_obs=sim.get_var('wt_obs')
-        wt *= fac
-        wt_obs *= fac
-        
-        self.update_observations(t,wt,wt_obs)
+        for field in self.obs_fields:
+            if field=='turb':
+                # Decay for wt, wt_obs.
+                weight_decay_time = 8*3600.
+            else:
+                weight_decay_time = 36*3600.
 
-        sim.set_var('wt',wt)
-        sim.set_var('wt_obs',wt_obs)
+            fac=np.exp(-dt_s/weight_decay_time)
+
+            wt_var,wt_obs_var=self.tracer_names(field)
+            
+            wt=sim.get_var(wt_var)
+            wt_obs=sim.get_var(wt_obs_var)
+            wt *= fac
+            wt_obs *= fac
+
+            self.update_observations(t,wt,wt_obs,field)
+
+            sim.set_var(wt_var,wt)
+            sim.set_var(wt_obs_var,wt_obs)
 
         # This is 2D!  Maybe it will be okay for a 2D run. But might have shape trouble.
         tau = sim.get_var('taus') # cell centre tau N/m2 {"location": "face", "shape": ["ndx"]}
+        decay0_time=3600.
+        decay1_time=86400.
         
         tauDecay0 = sim.get_var('tauDecay0')
         fac0=np.exp(-dt_s/decay0_time)
@@ -396,18 +388,23 @@ class HybridModel(sfb_csc.SfbCsc):
         
     def add_hybrid_tracers(self):
         # Will tracers default to 0 initial condition and BC value?
-        
         # BCs will already in place when this is called 
-        # (sfb_csc...set_bcs(), called from sfb_csc...configure())
-        self.tracers += ['wt_obs','wt','tauDecay0','tauDecay1']
-        
+
         # Need to mention the tracers somewhere in order for them to be created.
         sac=self.scalar_parent_bc("SacramentoRiver")
-        sac_wt_obs = hm.ScalarBC(parent=sac,scalar='wt_obs',value=0.0)
-        sac_wt = hm.ScalarBC(parent=sac,scalar='wt',value=0.0)
+
+        # (sfb_csc...set_bcs(), called from sfb_csc...configure())
+        for field in self.obs_fields:
+            wt_var, wt_obs_var = self.tracer_names(field)
+            self.tracers += [wt_var, wt_obs_var]
+            sac_wt = hm.ScalarBC(parent=sac,scalar=wt_var,value=0.0)
+            sac_wt_obs = hm.ScalarBC(parent=sac,scalar=wt_obs_var,value=0.0)
+            self.add_bcs([sac_wt,sac_wt_obs])
+            
+        self.tracers+=['tauDecay0','tauDecay1']
         sac_tauDecay0 = hm.ScalarBC(parent=sac,scalar='tauDecay0',value=0.0)
         sac_tauDecay1 = hm.ScalarBC(parent=sac,scalar='tauDecay1',value=0.0)
-        self.add_bcs([sac_wt,sac_wt_obs,sac_tauDecay0,sac_tauDecay1])
+        self.add_bcs([sac_tauDecay0,sac_tauDecay1])
         
 if __name__=='__main__':
     HybridModel.main(sys.argv[1:])
